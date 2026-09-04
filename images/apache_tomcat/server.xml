@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Server>
+	<Service name="Service">
+		<Connector port="80" protocol="HTTP/1.1"/>
+	</Service>
+</Server>
