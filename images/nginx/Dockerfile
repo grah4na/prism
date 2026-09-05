@@ -1,0 +1,33 @@
+FROM http-prism-soil:latest
+
+RUN apt -y update \
+ && apt -y upgrade \
+ && apt -y install --no-install-recommends php-fpm git libpcre2-dev zlib1g-dev libssl-dev libxml2-dev libxslt-dev
+
+ARG APP_REPO
+RUN git clone --recurse-submodules "$APP_REPO"
+
+COPY fix_ub.patch .
+ARG APP_VERSION
+ARG APP_BRANCH
+RUN cd /app/nginx \
+ && git pull origin "$APP_BRANCH" \
+ && git checkout "$APP_VERSION" \
+ && ./auto/configure --with-http_v2_module --with-ld-opt="$LDFLAGS" \
+ && git apply /app/fix_ub.patch \
+ && make "-j$(nproc)" \
+ && make install
+
+ARG CONFIG_FILE
+COPY $CONFIG_FILE /usr/local/nginx/conf/nginx.conf
+COPY ./index.php /usr/local/nginx/html/index.php
+
+ARG BACKEND_HOST=127.0.0.1
+ARG BACKEND_PORT=56062
+RUN sed -i -e "s/BACKEND_HOST_PLACEHOLDER/$BACKEND_HOST/g" -e "s/BACKEND_PORT_PLACEHOLDER/$BACKEND_PORT/g" /usr/local/nginx/conf/nginx.conf
+
+RUN groupadd nobody && sed -i 's/^listen = \/run\/php\/.*/listen = 127.0.0.1:9000/' /etc/php/8.4/fpm/pool.d/www.conf
+
+ARG START_SCRIPT
+COPY $START_SCRIPT ./start.sh
+CMD ["./start.sh"]
