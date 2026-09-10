@@ -1,0 +1,22 @@
+FROM http-prism-soil:latest
+
+RUN apt -y update \
+ && apt -y upgrade \
+ && apt -y install --no-install-recommends autoconf automake libtool-bin texinfo libapr1-dev
+
+ARG APP_REPO
+RUN git clone --recurse-submodules "$APP_REPO"
+
+ARG APP_VERSION
+ARG APP_BRANCH
+RUN cd /app/libmicrohttpd \
+ && git pull origin "$APP_BRANCH" \
+ && git checkout "$APP_VERSION" \
+ && ./bootstrap \
+ && ./configure --disable-doc \
+ && make "-j$(nproc)" install
+
+COPY prism_server.c .
+RUN "$CC" -I/usr/local/include -Wall -Wextra -pedantic prism_server.c /usr/local/lib/libmicrohttpd.a $CFLAGS -o prism_server -lapr-1
+
+CMD "./prism_server"
