@@ -28,6 +28,29 @@ _ALLOWED_TOKEN = frozenset(
 )
 _FORBIDDEN_VALUE = frozenset(b"\r\n\x00")
 
+# Headers ignored when comparing two responses. Framing headers (length,
+# transfer encoding) and hop-by-hop/metadata headers (dates, server banners,
+# validators) are set per instance and carry no protocol signal. Proxy-added
+# hop headers (via, x-cache) are dropped for the same reason.
+_IGNORED_RESP_COMPARE = frozenset(
+    [
+        b"content-length",
+        b"content_length",
+        b"transfer-encoding",
+        b"transfer_encoding",
+        b"connection",
+        b"keep-alive",
+        b"keep_alive",
+        b"date",
+        b"server",
+        b"etag",
+        b"last-modified",
+        b"last_modified",
+        b"via",
+        b"x-cache",
+    ]
+)
+
 
 @dataclasses.dataclass
 class Req:
@@ -94,6 +117,22 @@ class Resp:
     reason: bytes
     headers: list[tuple[bytes, bytes]]
     body: bytes
+
+    def comparable_headers(self) -> list[tuple[bytes, bytes]]:
+        out = [
+            (k.lower(), v)
+            for k, v in self.headers
+            if k.lower() not in _IGNORED_RESP_COMPARE
+        ]
+        out.sort()
+        return out
+
+    def comparable_body(self) -> bytes:
+        # 200 bodies are request traces; the request direction already compares
+        # those, so they carry no extra signal here.
+        if self.code == b"200":
+            return b""
+        return self.body
 
     def __eq__(self, other: object) -> bool:
         # The Prism only compares status codes for responses.

@@ -37,6 +37,25 @@ def show_resp(r: Resp) -> None:
     )
 
 
+def show_resp_full(r: Resp) -> None:
+    """Render one raw reply envelope (status line, headers, body snippet)."""
+    print(
+        f"    {RED}HTTPResponse{OFF}(version={r.version!r}, code={r.code!r}, reason={r.reason!r}),"
+    )
+    if not r.headers:
+        print("        headers=[],")
+    else:
+        print("        headers=[")
+        for k, v in r.headers:
+            print(f"            ({k!r}, {v!r}),")
+        print("        ],")
+    body = r.body
+    if len(body) > 80:
+        body = body[:80] + b"..."
+    print(f"        body={body!r},")
+    print("    ),")
+
+
 def show_views(views: list[list[Msg]], names: list[str]) -> None:
     for name, items in zip(names, views):
         print(f"{name}: [")
@@ -88,6 +107,42 @@ def show_matrix(m: Matrix, names: list[str]) -> None:
                 Verdict.REQUEST_DISCREPANCY,
                 Verdict.TYPE_DISCREPANCY,
                 Verdict.STREAM_DISCREPANCY,
+            ):
+                mark = f"{RED}X{OFF}"
+            elif cell == Verdict.INVALID:
+                mark = f"{BAD}X{OFF}"
+            else:
+                mark = "?"
+            text += mark + " "
+        text += "\n"
+    print(text, end="")
+
+
+def show_resp_matrix(m: Matrix, names: list[str]) -> None:
+    """Like show_matrix, but a differing response is a real discrepancy (X)."""
+    width = max(map(len, names))
+    padded = [n.ljust(width) for n in names]
+    head_src = [" " * len(padded[0]), *padded]
+    text = "".join(
+        f'{"".ljust(width - 1)}{" ".join(row)}\n'
+        for row in itertools.zip_longest(
+            *(s.strip().rjust(len(s)) for s in head_src),
+        )
+    )
+    text += f"{''.ljust(width)}+{'-' * (len(names) * 2 - 1)}\n"
+    for label, row in zip(padded, m):
+        text += label.ljust(width) + "|"
+        for cell in row:
+            if cell is None:
+                mark = " "
+            elif cell == Verdict.OK:
+                mark = f"{GREEN}\u2713{OFF}"
+            elif cell in (
+                Verdict.DISCREPANCY,
+                Verdict.REQUEST_DISCREPANCY,
+                Verdict.TYPE_DISCREPANCY,
+                Verdict.STREAM_DISCREPANCY,
+                Verdict.RESPONSE_DISCREPANCY,
             ):
                 mark = f"{RED}X{OFF}"
             elif cell == Verdict.INVALID:
@@ -171,9 +226,30 @@ HELP_TOPICS: dict[str, tuple[str, str, str, str]] = {
     "cluster": (
         "fanout ... | cluster [server ...]",
         "Group identical servers",
-        "Group servers that parsed the fanout views identically. "
-        "Ends the pipeline.",
+        "Group servers that parsed the fanout views identically. " "Ends the pipeline.",
         "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | fanout | cluster",
+    ),
+    "rfanout": (
+        "rfanout [server ...]",
+        "Send bytes, show raw replies",
+        "Send the current bytes to origins and transducers and show each reply "
+        "as an HTTP response envelope (status, headers, body) instead of the "
+        "parsed request trace. Defaults to every server.",
+        "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | rfanout reactphp busybox",
+    ),
+    "rgrid": (
+        "rfanout ... | rgrid [server ...]",
+        "Pairwise comparison of replies",
+        "Compare the raw reply envelopes from rfanout pairwise into a "
+        "difference matrix. Status, headers and rejection bodies are compared. "
+        "Ends the pipeline.",
+        "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | rfanout | rgrid",
+    ),
+    "rcluster": (
+        "rfanout ... | rcluster [server ...]",
+        "Group servers that replied alike",
+        "Group servers whose raw reply envelopes compare equal. " "Ends the pipeline.",
+        "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | rfanout | rcluster",
     ),
     "help": (
         "help [command]",
@@ -211,9 +287,10 @@ _HELP_GROUPS: list[tuple[str, list[str]]] = [
             "h2fanout",
             "unparsed_fanout",
             "unparsed_transducer_fanout",
+            "rfanout",
         ],
     ),
-    ("COMPARE & VIEW", ["grid", "cluster"]),
+    ("COMPARE & VIEW", ["grid", "cluster", "rgrid", "rcluster"]),
     ("SESSION", ["help", "examples", "exit"]),
 ]
 
@@ -254,6 +331,10 @@ _EXAMPLE_PAYLOADS: list[tuple[str, str]] = [
         "HTTP/2 preface + settings",
         "h2frames pri [ type settings flags { 0 } id 0 payload '' ] | h2fanout",
     ),
+    (
+        "Response direction",
+        "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | rfanout | rgrid",
+    ),
 ]
 
 
@@ -289,7 +370,7 @@ def show_help(topic: str | None = None) -> None:
             print(
                 "Topics: payload h2frames transduce fanout h2fanout "
                 "unparsed_fanout|uf unparsed_transducer_fanout|utf "
-                "grid cluster help examples exit|quit"
+                "grid cluster rfanout rgrid rcluster help examples exit|quit"
             )
             return
         if key == "examples":

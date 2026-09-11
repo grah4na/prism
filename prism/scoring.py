@@ -137,3 +137,22 @@ def judge(a: list[Msg], b: list[Msg], ha: Host, hb: Host) -> Verdict:
             if scrub(x, ha, hb) != scrub(y, hb, ha):
                 return Verdict.REQUEST_DISCREPANCY
     return Verdict.OK
+
+
+def judge_response(a: list[Resp], b: list[Resp], ha: Host, hb: Host) -> Verdict:
+    """Compare two raw reply streams (status, headers, rejection bodies)."""
+    if ha.no_keepalive or hb.no_keepalive:
+        a, b = a[:1], b[:1]
+    for x, y in itertools.zip_longest(a, b):
+        if x is None or y is None:
+            return Verdict.STREAM_DISCREPANCY
+        if x.code != y.code:
+            return Verdict.RESPONSE_DISCREPANCY
+        # Reason phrases are free text; the status code carries the signal.
+        if x.reason.lower() != y.reason.lower():
+            return Verdict.RESPONSE_DISCREPANCY
+        if x.comparable_headers() != y.comparable_headers():
+            return Verdict.RESPONSE_DISCREPANCY
+        if x.comparable_body() != y.comparable_body():
+            return Verdict.RESPONSE_DISCREPANCY
+    return Verdict.OK

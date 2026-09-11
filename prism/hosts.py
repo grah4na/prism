@@ -19,7 +19,7 @@ from .http_parse import (
     read_response,
     trim_09,
 )
-from .models import Msg
+from .models import Msg, Resp
 from .nethelp import exchange, wrap_tls
 
 ORIGIN_WAIT = 0.05
@@ -75,6 +75,27 @@ class Host:
 
     def parsed_hit(self, pieces: list[bytes]) -> list[Msg]:
         raise NotImplementedError
+
+    def response_hit(self, pieces: list[bytes]) -> list[Resp]:
+        """Send bytes and return the raw reply envelopes.
+
+        Unlike parsed_hit this never decodes the 200 request trace; origins and
+        transducers are both read as plain HTTP responses.
+        """
+        blob = b"".join(self.raw_hit(pieces))
+        out: list[Resp] = []
+        while blob:
+            try:
+                resp, leftover = read_response(blob)
+            except ValueError:
+                print(
+                    f"Couldn't parse {self.name}'s response to {pieces!r}:\n    {blob!r}",
+                    file=sys.stderr,
+                )
+                break
+            out.append(resp)
+            blob = leftover
+        return out
 
 
 def _fix_host(pieces: list[bytes], addr: bytes) -> list[bytes]:

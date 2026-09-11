@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import shlex
 import sys
-from typing import Any
+from typing import Any, cast
 
 from . import h2mini
 from .hosts import Host, load_hosts
@@ -15,10 +15,17 @@ from .pretty import (
     show_help,
     show_matrix,
     show_raw,
+    show_resp_full,
+    show_resp_matrix,
     show_stream,
     show_views,
 )
-from .table import build_groups, build_matrix
+from .table import (
+    build_groups,
+    build_matrix,
+    build_response_groups,
+    build_response_matrix,
+)
 
 PROMPT = "\x1b[0;32mprism>\x1b[0m "
 
@@ -197,6 +204,17 @@ def _is_views(v: Any) -> bool:
     return ok
 
 
+def _is_resp_views(v: Any) -> bool:
+    ok = (
+        isinstance(v, list)
+        and all(isinstance(inner, list) for inner in v)
+        and all(all(isinstance(m, Resp) for m in inner) for inner in v)
+    )
+    if not ok:
+        print("This command expects to have its input piped in from `rfanout`.")
+    return ok
+
+
 def _is_bytes(v: Any) -> bool:
     return isinstance(v, list) and all(isinstance(x, bytes) for x in v)
 
@@ -226,10 +244,10 @@ def main(argv: list[str] | None = None) -> None:
         show_help(args[1] if len(args) == 2 else None)
         return
     try:
-        origins, proxies, _all = load_hosts()
+        origins, proxies, allhosts = load_hosts()
     except Exception as e:
         print(f"Failed to load hosts: {e}", file=sys.stderr)
-        origins, proxies, _all = {}, {}, {}
+        origins, proxies, allhosts = {}, {}, {}
 
     while True:
         try:
@@ -282,6 +300,44 @@ def main(argv: list[str] | None = None) -> None:
                         want = cmd[1:] or list(origins.keys())
                         if _ok_hosts(want, origins, proxies) and want:
                             show_groups(build_groups(cur, [origins[n] for n in want]))
+                        cur = None
+                elif cmd and cmd[0] == "rfanout":
+                    if _is_bytes(cur):
+                        assert isinstance(cur, list)
+                        want = cmd[1:] or list(allhosts.keys())
+                        if _ok_hosts(want, origins, proxies) and want:
+                            targets = [allhosts[n] for n in want]
+                            rows = run_parallel(lambda h: h.response_hit(cur), targets)  # type: ignore[arg-type]
+                            cur = rows  # type: ignore[assignment]
+                            for name, items in zip(want, rows):
+                                print(f"{name}: [")
+                                for it in items:
+                                    show_resp_full(it)
+                                print("]")
+                    else:
+                        print(
+                            "This command expects to have its input piped in from `payload` or `transduce`."
+                        )
+                elif cmd and cmd[0] == "rgrid":
+                    if _is_resp_views(cur):
+                        rows = cast("list[list[Resp]]", cur)
+                        want = cmd[1:] or list(allhosts.keys())
+                        if _ok_hosts(want, origins, proxies) and want:
+                            show_resp_matrix(
+                                build_response_matrix(
+                                    rows, [allhosts[n] for n in want]
+                                ),
+                                want,
+                            )
+                        cur = None
+                elif cmd and cmd[0] == "rcluster":
+                    if _is_resp_views(cur):
+                        rows = cast("list[list[Resp]]", cur)
+                        want = cmd[1:] or list(allhosts.keys())
+                        if _ok_hosts(want, origins, proxies) and want:
+                            show_groups(
+                                build_response_groups(rows, [allhosts[n] for n in want])
+                            )
                         cur = None
                 elif cmd and cmd[0] == "transduce":
                     names = cmd[1:]
