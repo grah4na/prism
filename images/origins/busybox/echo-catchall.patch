@@ -1,0 +1,33 @@
+diff --git a/networking/httpd.c b/networking/httpd.c
+index ad59493..0e81409 100644
+--- a/networking/httpd.c
++++ b/networking/httpd.c
+@@ -2576,7 +2576,13 @@ static void handle_incoming_and_exit(const len_and_sockaddr *fromAddr)
+ 	else /* why "else": do not check "cgi-bin/SCRIPT/something" for cases below: */
+ #endif
+ 	{
+-		if (urlp[-1] == '/') {
++		if (urlp[-1] == '/'
++#if ENABLE_FEATURE_HTTPD_CGI
++			/* PRISM: dir URLs with nothing on disk skip the index.html
++			 * append so the echo CGI below sees the original URL. */
++			&& stat(tptr, &sb) == 0
++#endif
++		) {
+ 			/* When index_page string is appended to <dir>/ URL, it overwrites
+ 			 * the query string. If we fall back to call /cgi-bin/index.cgi,
+ 			 * query string would be lost and not available to the CGI.
+@@ -2618,6 +2624,13 @@ static void handle_incoming_and_exit(const len_and_sockaddr *fromAddr)
+ 				send_headers_and_exit(HTTP_NOT_FOUND); /* no */
+ 			cgi_type = CGI_INDEX;
+ 		}
++		/* PRISM: unknown paths echo through /cgi-bin/index.cgi instead
++		 * of 404 so differential inputs reach the HTTP parser. Routing
++		 * only; request parsing is untouched and urlcopy (REQUEST_URI)
++		 * keeps the original URI. */
++		else {
++			cgi_type = CGI_INDEX;
++		}
+ #endif
+ 	}
+ 

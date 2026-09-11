@@ -22,6 +22,14 @@ aws_c_http:
   allows-http-2: true
   doesnt-support-version: true
   allows-missing-host-header: true
+busybox:
+  doesnt-support-version: true
+  allows-missing-host-header: true
+  method-whitelist: ['GET', 'POST']
+  header-name-translation: {'-': '_'}
+  doesnt-support-persistence: true
+  joins-duplicate-headers: true
+  duplicate-header-joiner: ""
 cpp_httplib:
   allows-missing-host-header: true
   method-whitelist: ['DELETE', 'GET']

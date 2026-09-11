@@ -88,6 +88,15 @@ services:
       context: ./images/origins/aws_c_http
     x-props:
       role: origin
+  busybox:
+    build:
+      args:
+        APP_BRANCH: master
+        APP_REPO: https://git.busybox.net/busybox
+        APP_VERSION: 74ac096e895acd6b02976bb010e9b3511234e899
+      context: ./images/origins/busybox
+    x-props:
+      role: origin
   cpp_httplib:
     build:
       args:
