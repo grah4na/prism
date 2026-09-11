@@ -106,3 +106,104 @@ def show_groups(g: Groups) -> None:
 
 def show_stream(blobs: list[bytes]) -> None:
     print(" ".join(repr(b)[1:] for b in blobs))
+
+
+# ---------- help text (no upstream equivalent; ours only) ----------
+
+# topic -> (syntax, what it does, example)
+HELP_TOPICS: dict[str, tuple[str, str, str]] = {
+    "payload": (
+        "payload '<bytes>' [ ... ] | payload",
+        "Start a pipeline with raw request bytes (escape as \\r \\n \\xff), or print the current bytes.",
+        "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | fanout",
+    ),
+    "h2frames": (
+        "h2frames [ pri ] [ '[' type <t> flags { ... } id <n> payload '<bytes>' ']' ... ]",
+        "Build raw HTTP/2 wire bytes. Frame types: data headers priority rst_stream settings push_promise ping goaway window_update continuation (or 0-255).",
+        "h2frames pri [ type settings flags { 0 } id 0 payload '' ] | h2fanout",
+    ),
+    "transduce": (
+        "transduce <proxy> [ ... ]",
+        "Pipe the current bytes through one or more transducer proxies.",
+        "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | transduce squid | fanout",
+    ),
+    "fanout": (
+        "fanout [server ...]",
+        "Send the current bytes to origin servers and show each parsed request/response. Defaults to all origins.",
+        "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | fanout nginx apache_httpd",
+    ),
+    "h2fanout": (
+        "h2fanout [server ...]",
+        "Like fanout, but only hits servers that accept HTTP/2.",
+        "h2frames pri [ type settings flags { 0 } id 0 payload '' ] | h2fanout",
+    ),
+    "unparsed_fanout": (
+        "unparsed_fanout|uf [server ...]",
+        "Send the current bytes to origin servers and show the raw reply bytes.",
+        "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | uf nginx",
+    ),
+    "unparsed_transducer_fanout": (
+        "unparsed_transducer_fanout|utf [proxy ...]",
+        "Send the current bytes to transducer proxies and show the raw reply bytes.",
+        "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | utf squid",
+    ),
+    "grid": (
+        "fanout ... | grid [server ...]",
+        "Compare parsed fanout views pairwise into a matrix. Ends the pipeline.",
+        "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | fanout | grid",
+    ),
+    "cluster": (
+        "fanout ... | cluster [server ...]",
+        "Group servers that parsed the fanout views identically. Ends the pipeline.",
+        "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | fanout | cluster",
+    ),
+    "exit": (
+        "exit | quit",
+        "Leave the shell (Ctrl-D works too).",
+        "exit",
+    ),
+}
+
+# short names share the full topic
+HELP_TOPICS["uf"] = HELP_TOPICS["unparsed_fanout"]
+HELP_TOPICS["utf"] = HELP_TOPICS["unparsed_transducer_fanout"]
+HELP_TOPICS["quit"] = HELP_TOPICS["exit"]
+
+_HELP_ORDER = [
+    "payload",
+    "h2frames",
+    "transduce",
+    "fanout",
+    "h2fanout",
+    "unparsed_fanout",
+    "unparsed_transducer_fanout",
+    "grid",
+    "cluster",
+    "exit",
+]
+
+
+def show_help(topic: str | None = None) -> None:
+    if topic is not None:
+        key = topic.lower()
+        if key in ("unparsed-fanout",):
+            key = "unparsed_fanout"
+        if key in ("unparsed-transducer-fanout",):
+            key = "unparsed_transducer_fanout"
+        if key not in HELP_TOPICS:
+            print(f"Unknown help topic: {topic}")
+            return
+        syntax, what, example = HELP_TOPICS[key]
+        print(syntax)
+        print(f"  {what}")
+        print(f"  e.g. {example}")
+        return
+    print("Commands (chain with `|`; split pipelines with `;`):")
+    print("  sources: payload, h2frames")
+    print("  pipe-through: transduce, fanout, h2fanout, unparsed_fanout|uf, unparsed_transducer_fanout|utf")
+    print("  views: grid, cluster")
+    print("  session: help [command], exit|quit")
+    for name in _HELP_ORDER:
+        syntax, _, _ = HELP_TOPICS[name]
+        print(f"  {syntax}")
+    print("Type `help <command>` for usage and an example.")

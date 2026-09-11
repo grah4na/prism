@@ -12,6 +12,7 @@ from .models import Msg, Req, Resp
 from .nethelp import pop_next, run_parallel
 from .pretty import (
     show_groups,
+    show_help,
     show_matrix,
     show_raw,
     show_stream,
@@ -219,7 +220,11 @@ def _decode_payload(symbols: list[str]) -> list[bytes]:
     ]
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    args = sys.argv[1:] if argv is None else argv
+    if args and args[0] in ("--help", "-h", "help"):
+        show_help(args[1] if len(args) == 2 else None)
+        return
     try:
         origins, proxies, _all = load_hosts()
     except Exception as e:
@@ -351,6 +356,11 @@ def main() -> None:
                             cur = [blob]
                     except ShellErr as e:
                         print(f"repl parse error: {e}")
+                elif cmd and cmd[0] == "help":
+                    if len(cmd) > 2:
+                        print("Usage: help [command]")
+                    else:
+                        show_help(cmd[1] if len(cmd) == 2 else None)
                 elif cmd in (["exit"], ["quit"]):
                     print("Next time, just press Ctrl-D :)")
                     sys.exit(0)
