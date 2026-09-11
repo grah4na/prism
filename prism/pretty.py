@@ -231,7 +231,7 @@ HELP_TOPICS: dict[str, tuple[str, str, str, str]] = {
     ),
     "rfanout": (
         "rfanout [server ...]",
-        "Send bytes, show raw replies",
+        "Send bytes, show reply envelopes",
         "Send the current bytes to origins and transducers and show each reply "
         "as an HTTP response envelope (status, headers, body) instead of the "
         "parsed request trace. Defaults to every server.",
