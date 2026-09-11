@@ -29,9 +29,25 @@ from util import ssl_wrap, roundtrip
 _DEFAULT_ORIGIN_TIMEOUT: float = 0.05
 _DEFAULT_TRANSDUCER_TIMEOUT: float = 0.5
 _NETWORK_NAME: str = "http-prism_default"
-_COMPOSE_YML_PATH: PosixPath = PosixPath(f"{sys.path[0] or '.'}/../docker-compose.yml")
-_EXTERNAL_YML_PATH: PosixPath = PosixPath(f"{sys.path[0] or '.'}/../external-services.yml")
-_QUIRKS_YML_PATH: PosixPath = PosixPath(f"{sys.path[0] or '.'}/../quirks.yml")
+_ROOT = PosixPath(__file__).resolve().parent.parent
+
+
+def _pick(*names: PosixPath) -> PosixPath:
+    for p in names:
+        if p.exists():
+            return p
+    return names[0]
+
+
+_COMPOSE_YML_PATH: PosixPath = _pick(
+    _ROOT / "config" / "compose.yml", _ROOT / "docker-compose.yml"
+)
+_EXTERNAL_YML_PATH: PosixPath = _pick(
+    _ROOT / "config" / "external.yml", _ROOT / "external-services.yml"
+)
+_QUIRKS_YML_PATH: PosixPath = _pick(
+    _ROOT / "config" / "quirks.yml", _ROOT / "quirks.yml"
+)
 
 
 @dataclasses.dataclass

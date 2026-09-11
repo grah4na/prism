@@ -27,9 +27,19 @@ PROXY_WAIT = 0.5
 NET = "http-prism_default"
 
 _HERE = Path(__file__).resolve().parent
-_COMPOSE = _HERE.parent / "docker-compose.yml"
-_EXTERNAL = _HERE.parent / "external-services.yml"
-_QUIRKS = _HERE.parent / "quirks.yml"
+_ROOT = _HERE.parent
+
+
+def _pick(*names: Path) -> Path:
+    for p in names:
+        if p.exists():
+            return p
+    return names[0]
+
+
+_COMPOSE = _pick(_ROOT / "config" / "compose.yml", _ROOT / "docker-compose.yml")
+_EXTERNAL = _pick(_ROOT / "config" / "external.yml", _ROOT / "external-services.yml")
+_QUIRKS = _pick(_ROOT / "config" / "quirks.yml", _ROOT / "quirks.yml")
 
 
 @dataclasses.dataclass

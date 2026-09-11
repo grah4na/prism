@@ -10,8 +10,19 @@ import tqdm
 import yaml
 
 
+def _compose_path() -> str:
+    here = os.path.dirname(os.path.abspath(__file__))
+    for cand in (
+        os.path.join(here, "..", "config", "compose.yml"),
+        os.path.join(here, "..", "docker-compose.yml"),
+    ):
+        if os.path.exists(cand):
+            return cand
+    return os.path.join(here, "..", "config", "compose.yml")
+
+
 def main() -> None:
-    with open(f"{os.path.dirname(__file__)}/../docker-compose.yml", "r", encoding="ascii") as f:
+    with open(_compose_path(), "r", encoding="ascii") as f:
         services: dict = yaml.safe_load(f).get("services")
 
     for name, service in tqdm.tqdm(services.items()):
