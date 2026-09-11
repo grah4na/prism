@@ -1,0 +1,2 @@
+# Soil
+This is the base image for most of the images in the HTTP Prism. It's basically Debian Trixie with my fork of AFL++ installed for persistent coverage collection, plus a few extra useful utilities.
