@@ -2,7 +2,8 @@
 
 set -euo pipefail
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
+ROOT="$PWD"
 
 if [ "$#" -eq 0 ]; then
     set -- 'help'
