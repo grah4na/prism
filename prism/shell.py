@@ -6,7 +6,7 @@ import shlex
 import sys
 from typing import Any, cast
 
-from . import h2mini
+from . import h2mini, h3mini
 from .hosts import Host, load_hosts
 from .models import Msg, Req, Resp
 from .nethelp import pop_next, run_parallel
@@ -159,6 +159,76 @@ def _frames_word(words: list[str]) -> list[bytes]:
         if typ is None:
             raise ShellErr("No valid H2FrameType found!")
         out.append(h2mini.Frame(typ, flg, rsv, sid, body).wire())
+    return out
+
+
+def _h3type_word(it) -> h3mini.FType:
+    it = iter(it)
+    tok = pop_next(it)
+    if tok is None:
+        raise ShellErr("Unexpected start of type statement")
+    low = tok.lower()
+    table = {
+        "data": h3mini.DATA,
+        "headers": h3mini.HEADERS,
+        "cancel_push": h3mini.CANCEL_PUSH,
+        "settings": h3mini.SETTINGS,
+        "push_promise": h3mini.PUSH_PROMISE,
+        "goaway": h3mini.GOAWAY,
+        "max_push_id": h3mini.MAX_PUSH_ID,
+    }
+    if low in table:
+        return h3mini.FType(table[low])
+    try:
+        num = int(tok)
+    except ValueError:
+        raise ShellErr("Unexpected value of type statement")
+    if num not in range(256):
+        raise ShellErr("type out of range!")
+    return h3mini.FType(num)
+
+
+def _h3frames_word(words: list[str]) -> list[bytes]:
+    it = iter(words)
+    out: list[bytes] = []
+    while True:
+        head = pop_next(it)
+        if head is None:
+            break
+        if head.lower() != "[":
+            raise ShellErr(
+                "Unexpected start of frame statement (should begin with '[')!"
+            )
+        typ: h3mini.FType | None = None
+        payload = b""
+        while True:
+            tok = pop_next(it)
+            if tok is None:
+                raise ShellErr("Unexpected end of frame statement!")
+            t = tok.lower()
+            if t == "type":
+                typ = _h3type_word(it)
+            elif t == "payload":
+                raw = pop_next(it)
+                if raw is None:
+                    raise ShellErr("Premature end of payload statement!")
+                try:
+                    payload = (
+                        raw.encode("latin1").decode("unicode-escape").encode("latin1")
+                    )
+                except UnicodeEncodeError:
+                    raise ShellErr(
+                        "Couldn't encode the frame payload to latin1. If you're using multibyte characters, please use escape sequences (e.g. `\\xff`) instead."
+                    )
+                except UnicodeDecodeError:
+                    raise ShellErr(
+                        "Couldn't Unicode escape the frame payload. Did you forget to quote it?"
+                    )
+            elif t == "]":
+                break
+        if typ is None:
+            raise ShellErr("No valid H3FrameType found!")
+        out.append(h3mini.Frame(typ, payload).wire())
     return out
 
 
@@ -405,6 +475,16 @@ def main(argv: list[str] | None = None) -> None:
                 elif cmd and cmd[0] == "h2frames":
                     try:
                         blob = b"".join(_frames_word(cmd[1:]))
+                        if _is_bytes(cur):
+                            assert isinstance(cur, list)
+                            cur.append(blob)
+                        else:
+                            cur = [blob]
+                    except ShellErr as e:
+                        print(f"repl parse error: {e}")
+                elif cmd and cmd[0] == "h3frames":
+                    try:
+                        blob = b"".join(_h3frames_word(cmd[1:]))
                         if _is_bytes(cur):
                             assert isinstance(cur, list)
                             cur.append(blob)

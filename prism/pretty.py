@@ -182,6 +182,14 @@ HELP_TOPICS: dict[str, tuple[str, str, str, str]] = {
         "goaway window_update continuation (or a number 0-255).",
         "h2frames pri [ type settings flags { 0 } id 0 payload '' ] | h2fanout",
     ),
+    "h3frames": (
+        "h3frames [ frame ... ]",
+        "Build raw HTTP/3 frame bytes",
+        "Each frame is [ type <t> payload '<bytes>' ]. Types: data headers "
+        "cancel_push settings push_promise goaway max_push_id (or a number "
+        "0-255). QUIC varints are handled for you.",
+        "h3frames [ type headers payload '\\x00\\x00' ] [ type data payload '' ]",
+    ),
     "transduce": (
         "transduce <proxy> [...]",
         "Rewrite bytes through proxies",
@@ -278,7 +286,7 @@ HELP_TOPICS["utf"] = HELP_TOPICS["unparsed_transducer_fanout"]
 HELP_TOPICS["quit"] = HELP_TOPICS["exit"]
 
 _HELP_GROUPS: list[tuple[str, list[str]]] = [
-    ("START A PIPELINE", ["payload", "h2frames"]),
+    ("START A PIPELINE", ["payload", "h2frames", "h3frames"]),
     (
         "REWRITE & SEND",
         [
@@ -368,7 +376,7 @@ def show_help(topic: str | None = None) -> None:
         if key not in HELP_TOPICS:
             print(f"Unknown help topic: {topic}")
             print(
-                "Topics: payload h2frames transduce fanout h2fanout "
+                "Topics: payload h2frames h3frames transduce fanout h2fanout "
                 "unparsed_fanout|uf unparsed_transducer_fanout|utf "
                 "grid cluster rfanout rgrid rcluster help examples exit|quit"
             )
