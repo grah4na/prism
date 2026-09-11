@@ -139,6 +139,12 @@ twisted:
   duplicate-header-joiner: ""
 undertow:
 uvicorn:
+uwsgi:
+  allows-missing-host-header: true
+  header-name-translation: {'-': '_'}
+  doesnt-support-persistence: true
+  joins-duplicate-headers: true
+  duplicate-header-joiner: ", "
 waitress:
   allows-http-0-9: true
   allows-missing-host-header: true

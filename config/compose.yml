@@ -520,6 +520,15 @@ services:
       context: ./images/origins/uvicorn
     x-props:
       role: origin
+  uwsgi:
+    build:
+      args:
+        APP_BRANCH: master
+        APP_REPO: https://github.com/unbit/uwsgi
+        APP_VERSION: 8d116f7ea2b098c11ce54d0b3a561c54dcd11929
+      context: ./images/origins/uwsgi
+    x-props:
+      role: origin
   vinyl:
     build:
       args:
