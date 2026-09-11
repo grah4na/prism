@@ -562,7 +562,7 @@ wheels = [
 ]
 
 [[package]]
-name = "tools"
+name = "prism"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
