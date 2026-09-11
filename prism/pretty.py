@@ -181,6 +181,13 @@ HELP_TOPICS: dict[str, tuple[str, str, str, str]] = {
         "Print the command overview, or usage and an example for one command.",
         "help fanout",
     ),
+    "examples": (
+        "help examples",
+        "Copy-paste example payloads",
+        "Ready-made pipelines to paste at the prompt. Swap grid for cluster "
+        "to regroup, or add server names to narrow the run.",
+        "",
+    ),
     "exit": (
         "exit | quit",
         "Leave the shell",
@@ -207,7 +214,46 @@ _HELP_GROUPS: list[tuple[str, list[str]]] = [
         ],
     ),
     ("COMPARE & VIEW", ["grid", "cluster"]),
-    ("SESSION", ["help", "exit"]),
+    ("SESSION", ["help", "examples", "exit"]),
+]
+
+# (label, full pipeline to paste) shown by `help examples`
+_EXAMPLE_PAYLOADS: list[tuple[str, str]] = [
+    (
+        "Basic GET",
+        "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | fanout | grid",
+    ),
+    (
+        "POST with body",
+        "payload 'POST / HTTP/1.1\\r\\nHost: a\\r\\nContent-Length: 5\\r\\n\\r\\nhello' "
+        "| fanout | grid",
+    ),
+    (
+        "Chunked POST",
+        "payload 'POST / HTTP/1.1\\r\\nHost: a\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n"
+        "4\\r\\nWiki\\r\\n0\\r\\n\\r\\n' | fanout | grid",
+    ),
+    (
+        "Missing Host header",
+        "payload 'GET / HTTP/1.1\\r\\n\\r\\n' | fanout | grid",
+    ),
+    (
+        "HTTP/1.0 without headers",
+        "payload 'GET / HTTP/1.0\\r\\n\\r\\n' | fanout | grid",
+    ),
+    (
+        "Duplicate headers",
+        "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\nX: 1\\r\\nX: 2\\r\\n\\r\\n' "
+        "| fanout | grid",
+    ),
+    (
+        "Absolute URI",
+        "payload 'GET http://a/ HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | fanout | grid",
+    ),
+    (
+        "HTTP/2 preface + settings",
+        "h2frames pri [ type settings flags { 0 } id 0 payload '' ] | h2fanout",
+    ),
 ]
 
 
@@ -243,8 +289,18 @@ def show_help(topic: str | None = None) -> None:
             print(
                 "Topics: payload h2frames transduce fanout h2fanout "
                 "unparsed_fanout|uf unparsed_transducer_fanout|utf "
-                "grid cluster help exit|quit"
+                "grid cluster help examples exit|quit"
             )
+            return
+        if key == "examples":
+            _, short, what, _ = HELP_TOPICS[key]
+            print(f"{BLUE}examples{OFF} -- {short}")
+            print()
+            print(*_help_wrap(what, "  "), sep="\n")
+            for label, cmd in _EXAMPLE_PAYLOADS:
+                print()
+                print(f"  {GREEN}{label}{OFF}")
+                print(f"    {cmd}")
             return
         syntax, short, what, example = HELP_TOPICS[key]
         print(f"{BLUE}{key}{OFF} -- {short}")
