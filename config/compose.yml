@@ -464,6 +464,15 @@ services:
       context: ./images/origins/protocol_http1
     x-props:
       role: origin
+  reactphp:
+    build:
+      args:
+        APP_BRANCH: 3.x
+        APP_REPO: https://github.com/reactphp/http
+        APP_VERSION: bb151a7cdf9e7b49caac9030add52c6427ebc6d2
+      context: ./images/origins/reactphp
+    x-props:
+      role: origin
   puma:
     build:
       args:

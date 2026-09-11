@@ -132,6 +132,7 @@ puma:
   header-name-translation: {'-': '_'}
   joins-duplicate-headers: true
   duplicate-header-joiner: ", "
+reactphp:
 thin:
   allows-missing-host-header: true
   method-character-blacklist: "!#%&'*+^`|~"
