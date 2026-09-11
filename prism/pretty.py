@@ -110,55 +110,80 @@ def show_stream(blobs: list[bytes]) -> None:
 
 # ---------- help text (no upstream equivalent; ours only) ----------
 
-# topic -> (syntax, what it does, example)
-HELP_TOPICS: dict[str, tuple[str, str, str]] = {
+# topic -> (syntax, short blurb, long description, example)
+HELP_TOPICS: dict[str, tuple[str, str, str, str]] = {
     "payload": (
-        "payload '<bytes>' [ ... ] | payload",
-        "Start a pipeline with raw request bytes (escape as \\r \\n \\xff), or print the current bytes.",
+        "payload '<bytes>' [...]",
+        "Start a pipeline with raw bytes",
+        "Build the byte stream that later stages send. Escape special bytes "
+        "as \\r \\n \\xff. Bare `payload` prints the current bytes instead.",
         "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | fanout",
     ),
     "h2frames": (
-        "h2frames [ pri ] [ '[' type <t> flags { ... } id <n> payload '<bytes>' ']' ... ]",
-        "Build raw HTTP/2 wire bytes. Frame types: data headers priority rst_stream settings push_promise ping goaway window_update continuation (or 0-255).",
+        "h2frames [ pri ] [ frame ... ]",
+        "Build raw HTTP/2 wire bytes",
+        "Each frame is [ type <t> flags { ... } id <n> payload '<bytes>' ]. "
+        "Types: data headers priority rst_stream settings push_promise ping "
+        "goaway window_update continuation (or a number 0-255).",
         "h2frames pri [ type settings flags { 0 } id 0 payload '' ] | h2fanout",
     ),
     "transduce": (
-        "transduce <proxy> [ ... ]",
-        "Pipe the current bytes through one or more transducer proxies.",
+        "transduce <proxy> [...]",
+        "Rewrite bytes through proxies",
+        "Pipe the current bytes through one or more transducer proxies, "
+        "printing the bytes after each hop.",
         "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | transduce squid | fanout",
     ),
     "fanout": (
         "fanout [server ...]",
-        "Send the current bytes to origin servers and show each parsed request/response. Defaults to all origins.",
+        "Send bytes, show parsed replies",
+        "Send the current bytes to origin servers and show each parsed "
+        "request/response. Defaults to all origins.",
         "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | fanout nginx apache_httpd",
     ),
     "h2fanout": (
         "h2fanout [server ...]",
+        "Fanout to HTTP/2 servers only",
         "Like fanout, but only hits servers that accept HTTP/2.",
         "h2frames pri [ type settings flags { 0 } id 0 payload '' ] | h2fanout",
     ),
     "unparsed_fanout": (
-        "unparsed_fanout|uf [server ...]",
-        "Send the current bytes to origin servers and show the raw reply bytes.",
+        "unparsed_fanout | uf [server ...]",
+        "Send bytes, show raw replies",
+        "Send the current bytes to origin servers and show the raw reply "
+        "bytes without parsing them.",
         "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | uf nginx",
     ),
     "unparsed_transducer_fanout": (
-        "unparsed_transducer_fanout|utf [proxy ...]",
-        "Send the current bytes to transducer proxies and show the raw reply bytes.",
+        "unparsed_transducer_fanout | utf [proxy ...]",
+        "Raw replies from proxies",
+        "Send the current bytes to transducer proxies and show the raw "
+        "reply bytes without parsing them.",
         "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | utf squid",
     ),
     "grid": (
         "fanout ... | grid [server ...]",
-        "Compare parsed fanout views pairwise into a matrix. Ends the pipeline.",
+        "Pairwise comparison matrix",
+        "Compare parsed fanout views pairwise into a difference matrix. "
+        "Ends the pipeline.",
         "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | fanout | grid",
     ),
     "cluster": (
         "fanout ... | cluster [server ...]",
-        "Group servers that parsed the fanout views identically. Ends the pipeline.",
+        "Group identical servers",
+        "Group servers that parsed the fanout views identically. "
+        "Ends the pipeline.",
         "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | fanout | cluster",
+    ),
+    "help": (
+        "help [command]",
+        "Show this help",
+        "Print the command overview, or usage and an example for one command.",
+        "help fanout",
     ),
     "exit": (
         "exit | quit",
+        "Leave the shell",
         "Leave the shell (Ctrl-D works too).",
         "exit",
     ),
@@ -169,18 +194,41 @@ HELP_TOPICS["uf"] = HELP_TOPICS["unparsed_fanout"]
 HELP_TOPICS["utf"] = HELP_TOPICS["unparsed_transducer_fanout"]
 HELP_TOPICS["quit"] = HELP_TOPICS["exit"]
 
-_HELP_ORDER = [
-    "payload",
-    "h2frames",
-    "transduce",
-    "fanout",
-    "h2fanout",
-    "unparsed_fanout",
-    "unparsed_transducer_fanout",
-    "grid",
-    "cluster",
-    "exit",
+_HELP_GROUPS: list[tuple[str, list[str]]] = [
+    ("START A PIPELINE", ["payload", "h2frames"]),
+    (
+        "REWRITE & SEND",
+        [
+            "transduce",
+            "fanout",
+            "h2fanout",
+            "unparsed_fanout",
+            "unparsed_transducer_fanout",
+        ],
+    ),
+    ("COMPARE & VIEW", ["grid", "cluster"]),
+    ("SESSION", ["help", "exit"]),
 ]
+
+
+def _help_columns() -> int:
+    try:
+        import shutil
+
+        return max(40, shutil.get_terminal_size((80, 24)).columns)
+    except Exception:
+        return 80
+
+
+def _help_wrap(text: str, indent: str) -> list[str]:
+    import textwrap
+
+    return textwrap.wrap(
+        text,
+        width=_help_columns(),
+        initial_indent=indent,
+        subsequent_indent=indent,
+    )
 
 
 def show_help(topic: str | None = None) -> None:
@@ -192,18 +240,27 @@ def show_help(topic: str | None = None) -> None:
             key = "unparsed_transducer_fanout"
         if key not in HELP_TOPICS:
             print(f"Unknown help topic: {topic}")
+            print(
+                "Topics: payload h2frames transduce fanout h2fanout "
+                "unparsed_fanout|uf unparsed_transducer_fanout|utf "
+                "grid cluster help exit|quit"
+            )
             return
-        syntax, what, example = HELP_TOPICS[key]
-        print(syntax)
-        print(f"  {what}")
-        print(f"  e.g. {example}")
+        syntax, short, what, example = HELP_TOPICS[key]
+        print(f"{BLUE}{key}{OFF} -- {short}")
+        print()
+        print(f"  Syntax   {syntax}")
+        print(f"  Example  {example}")
+        print()
+        print(*_help_wrap(what, "  "), sep="\n")
         return
-    print("Commands (chain with `|`; split pipelines with `;`):")
-    print("  sources: payload, h2frames")
-    print("  pipe-through: transduce, fanout, h2fanout, unparsed_fanout|uf, unparsed_transducer_fanout|utf")
-    print("  views: grid, cluster")
-    print("  session: help [command], exit|quit")
-    for name in _HELP_ORDER:
-        syntax, _, _ = HELP_TOPICS[name]
-        print(f"  {syntax}")
-    print("Type `help <command>` for usage and an example.")
+    print("Prism commands -- chain stages with `|`, run several with `;`.")
+    for title, names in _HELP_GROUPS:
+        print()
+        print(f"  {GREEN}{title}{OFF}")
+        width = max(len(n) for n in names)
+        for name in names:
+            _, short, _, _ = HELP_TOPICS[name]
+            print(f"    {BLUE}{name.ljust(width)}{OFF}  {short}")
+    print()
+    print("  Type `help <command>` for usage and an example.")
