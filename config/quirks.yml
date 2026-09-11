@@ -124,6 +124,13 @@ puma:
   header-name-translation: {'-': '_'}
   joins-duplicate-headers: true
   duplicate-header-joiner: ", "
+thin:
+  allows-missing-host-header: true
+  method-character-blacklist: "!#%&'*+^`|~"
+  header-name-translation: {'-': '_'}
+  doesnt-support-persistence: true
+  joins-duplicate-headers: true
+  duplicate-header-joiner: ""
 tornado:
   method-whitelist: ['DELETE', 'GET', 'PATCH', 'POST', 'PUT']
 twisted:

@@ -475,6 +475,15 @@ services:
     - ./tools:/tools
     x-props:
       role: transducer
+  thin:
+    build:
+      args:
+        APP_BRANCH: master
+        APP_REPO: https://github.com/macournoyer/thin
+        APP_VERSION: e7886a9bca2742586da74e06fffdd2093cc3a397
+      context: ./images/origins/thin
+    x-props:
+      role: origin
   tornado:
     build:
       args:
