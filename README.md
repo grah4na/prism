@@ -55,42 +55,7 @@ docker compose -f config/compose.yml --project-directory . -p http-prism down
 ./scripts/prism-docker.sh stop
 ```
 
-## How it works
-
-```
-                  +----------------+
-                  | payload /      |
-                  | h2frames /     |  raw bytes you control
-                  | h3frames       |
-                  +-------+--------+
-                          |
-                          v
-                  +-------+--------+
-                  | transduce      |  optional: rewrite through
-                  | (proxies)      |  transducer proxies
-                  +-------+--------+
-                          |
-            +-------------+-------------+
-            |                           |
-   +--------v---------+       +---------v--------+
-   | fanout / h2fanout|       | rfanout /        |
-   | h3fanout / uf    |       | h3fanout         |
-   | (request view:   |       | (response view:  |
-   |  what backend   |       |  status/headers/ |
-   |  parsed)        |       |  body)           |
-   +--------+---------+       +---------+--------+
-            |                           |
-   +--------v---------+       +---------v--------+
-   | grid / cluster   |       | rgrid / rcluster |
-   +------------------+       +------------------+
-```
-
-1. **Build bytes** with `payload`, `h2frames`, or `h3frames`.
-2. **Optionally rewrite** them with `transduce <proxy>...`.
-3. **Fan out** the same bytes to many servers in parallel.
-4. **Compare** with `grid` (pairwise matrix) or `cluster` (equivalence groups).
-
-Pipelines are chained with `|`, multiple pipelines with `;`. Bare `payload` prints the current bytes.
+> See [ARCHITECTURE.md](ARCHITECTURE.md) for pipeline flow and component details.
 
 ## Command reference
 
@@ -277,25 +242,6 @@ Probe quirks / regenerate compose with:
 ./scripts/prism-docker.sh build [container...]
 ```
 
-## Project layout
-
-```
-prism/            interactive shell + differential core
-  shell.py        REPL, pipeline dispatch, h2/h3 DSL
-  hosts.py        Docker discovery, Origin/Proxy/H3Origin
-  http_parse.py   H1 parsing, chunked, traces
-  h2mini.py       minimal H2 framing
-  h3mini.py / quichelp.py / qpack.py  H3 / QUIC / QPACK
-  table.py / scoring.py  grids, clusters, verdicts
-  pretty.py       colored output + help text
-  models.py       Req/Resp comparison semantics
-config/           compose.yml, quirks.yml, external.yml
-images/           Dockerfiles for origins / transducers
-tools/            original reference implementation
-tests/            parity + response + H3 tests
-scripts/          prism.sh, prism-docker.sh helpers
-```
-
 ## Tests
 
 No Docker required:
@@ -317,4 +263,4 @@ Lint / types (dev group in `pyproject.toml`): `black`, `mypy`, `pylint`.
 
 ## License
 
-GPL-3.0 — see `LICENSE`. Output format is kept compatible with the upstream HTTP Prism tool.
+Apache-2.0 — see `LICENSE`. Output format is kept compatible with the upstream HTTP Prism tool.
