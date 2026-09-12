@@ -190,6 +190,15 @@ HELP_TOPICS: dict[str, tuple[str, str, str, str]] = {
         "0-255). QUIC varints are handled for you.",
         "h3frames [ type headers payload '\\x00\\x00' ] [ type data payload '' ]",
     ),
+    "h3fanout": (
+        "h3fanout [server ...]",
+        "Fanout to HTTP/3 servers only",
+        "Send the current request bytes to HTTP/3 origins over QUIC and show "
+        "each decoded reply. Input comes from `payload` (a plain HTTP/1 request "
+        "line). Defaults to all H3 origins. Requires the optional aioquic "
+        "dependency.",
+        "payload 'GET / HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n' | h3fanout",
+    ),
     "transduce": (
         "transduce <proxy> [...]",
         "Rewrite bytes through proxies",
@@ -293,6 +302,7 @@ _HELP_GROUPS: list[tuple[str, list[str]]] = [
             "transduce",
             "fanout",
             "h2fanout",
+            "h3fanout",
             "unparsed_fanout",
             "unparsed_transducer_fanout",
             "rfanout",
@@ -376,7 +386,7 @@ def show_help(topic: str | None = None) -> None:
         if key not in HELP_TOPICS:
             print(f"Unknown help topic: {topic}")
             print(
-                "Topics: payload h2frames h3frames transduce fanout h2fanout "
+                "Topics: payload h2frames h3frames transduce fanout h2fanout h3fanout "
                 "unparsed_fanout|uf unparsed_transducer_fanout|utf "
                 "grid cluster rfanout rgrid rcluster help examples exit|quit"
             )

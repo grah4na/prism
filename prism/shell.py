@@ -6,8 +6,9 @@ import shlex
 import sys
 from typing import Any, cast
 
-from . import h2mini, h3mini
+from . import h2mini, h3mini, quichelp
 from .hosts import Host, load_hosts
+from .http_parse import read_request
 from .models import Msg, Req, Resp
 from .nethelp import pop_next, run_parallel
 from .pretty import (
@@ -263,6 +264,30 @@ def _ok_origin(names: list[str], origins) -> bool:
     return True
 
 
+def _ok_h3(names: list[str], h3hosts) -> bool:
+    for n in names:
+        if n not in h3hosts:
+            print(f"Invalid H3 server name: {n}")
+            return False
+    return True
+
+
+def _h3_fields(req: Req) -> list[tuple[bytes, bytes]]:
+    authority = b""
+    for k, v in req.headers:
+        if k.lower() == b"host":
+            authority = v
+            break
+    fields = [
+        (b":method", req.method),
+        (b":scheme", b"https"),
+        (b":authority", authority),
+        (b":path", req.uri),
+    ]
+    fields += [(k, v) for k, v in req.headers if k.lower() != b"host"]
+    return fields
+
+
 def _is_views(v: Any) -> bool:
     ok = (
         isinstance(v, list)
@@ -314,10 +339,10 @@ def main(argv: list[str] | None = None) -> None:
         show_help(args[1] if len(args) == 2 else None)
         return
     try:
-        origins, proxies, allhosts = load_hosts()
+        origins, proxies, allhosts, h3hosts = load_hosts()
     except Exception as e:
         print(f"Failed to load hosts: {e}", file=sys.stderr)
-        origins, proxies, allhosts = {}, {}, {}
+        origins, proxies, allhosts, h3hosts = {}, {}, {}, {}
 
     while True:
         try:
@@ -492,6 +517,36 @@ def main(argv: list[str] | None = None) -> None:
                             cur = [blob]
                     except ShellErr as e:
                         print(f"repl parse error: {e}")
+                elif cmd and cmd[0] == "h3fanout":
+                    if _is_bytes(cur):
+                        assert isinstance(cur, list)
+                        want = cmd[1:] or list(h3hosts.keys())
+                        if _ok_h3(want, h3hosts) and want:
+                            try:
+                                req = read_request(b"".join(cur))
+                            except ValueError as e:
+                                print(f"Couldn't parse request bytes for h3fanout: {e}")
+                            else:
+                                fields = _h3_fields(req)
+                                hosts = [h3hosts[n] for n in want]
+                                rows = run_parallel(
+                                    lambda h: [
+                                        quichelp.h3_hit(
+                                            h.addr, h.port, fields, req.body
+                                        ).to_resp()
+                                    ],
+                                    hosts,
+                                )
+                                cur = rows  # type: ignore[assignment]
+                                for name, items in zip(want, rows):
+                                    print(f"{name}: [")
+                                    for it in items:
+                                        show_resp_full(it)
+                                    print("]")
+                    else:
+                        print(
+                            "This command expects to have its input piped in from `payload`."
+                        )
                 elif cmd and cmd[0] == "help":
                     if len(cmd) > 2:
                         print("Usage: help [command]")

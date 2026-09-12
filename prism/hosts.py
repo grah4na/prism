@@ -173,6 +173,14 @@ class Origin(Host):
         return out
 
 
+class H3Origin(Host):
+    """An HTTP/3 origin; addr/port are a QUIC (UDP) endpoint.
+
+    Transport lives in quichelp, which is imported lazily so H1/H2 users need
+    no aioquic dependency.
+    """
+
+
 class Proxy(Host):
     def raw_hit(self, pieces: list[bytes]) -> list[bytes]:
         if self.strict_host:
@@ -244,7 +252,9 @@ def _ip_of(cont: Any | None, net: str) -> str | None:
         return None
 
 
-def load_hosts() -> tuple[dict[str, Origin], dict[str, Proxy], dict[str, Host]]:
+def load_hosts() -> (
+    tuple[dict[str, Origin], dict[str, Proxy], dict[str, Host], dict[str, H3Origin]]
+):
     with open(_QUIRKS, encoding="latin1") as f:
         quirks: dict = yaml.safe_load(f) or {}
     with open(_COMPOSE, encoding="latin1") as f:
@@ -263,7 +273,15 @@ def load_hosts() -> tuple[dict[str, Origin], dict[str, Proxy], dict[str, Host]]:
     for svc, cfg in merged.items():
         xp: dict[str, Any] = (cfg or {}).get("x-props", {}) or {}
         role = xp.get("role")
-        cls = Origin if role == "origin" else Proxy if role == "transducer" else None
+        cls = (
+            Origin
+            if role == "origin"
+            else (
+                Proxy
+                if role == "transducer"
+                else H3Origin if role == "h3-origin" else None
+            )
+        )
         cont = cmap.get(svc)
         if cls is not None and cont is None and svc not in external:
             missing.append(svc)
@@ -273,12 +291,12 @@ def load_hosts() -> tuple[dict[str, Origin], dict[str, Proxy], dict[str, Host]]:
             continue
         q: dict = quirks.get(svc, {}) or {}
         need_tls = bool(xp.get("requires-tls", False))
-        default_wait = ORIGIN_WAIT if role == "origin" else PROXY_WAIT
+        default_wait = ORIGIN_WAIT if role in ("origin", "h3-origin") else PROXY_WAIT
         kw = dict(
             name=svc,
             container=cont,
             addr=addr,
-            port=int(xp.get("port", 443 if need_tls else 80)),
+            port=int(xp.get("port", 443 if (need_tls or role == "h3-origin") else 80)),
             tls=need_tls,
             wait=float(xp.get("timeout") or default_wait),
             allow_09=bool(q.get("allows-http-0-9", False)),
@@ -313,5 +331,6 @@ def load_hosts() -> tuple[dict[str, Origin], dict[str, Proxy], dict[str, Host]]:
     found.sort(key=lambda h: h.name)
     origins = {h.name: h for h in found if isinstance(h, Origin)}
     proxies = {h.name: h for h in found if isinstance(h, Proxy)}
+    h3 = {h.name: h for h in found if isinstance(h, H3Origin)}
     allh = {h.name: h for h in found if isinstance(h, (Origin, Proxy))}
-    return origins, proxies, allh
+    return origins, proxies, allh, h3

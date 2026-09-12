@@ -11,6 +11,9 @@ sys.path.insert(0, ROOT)
 from prism import h3mini  # noqa: E402
 from prism.h3mini import H3Err  # noqa: E402
 from prism import qpack  # noqa: E402
+from prism import quichelp  # noqa: E402
+from prism.models import Req  # noqa: E402
+from prism.shell import _h3_fields  # noqa: E402
 
 
 @pytest.mark.parametrize(
@@ -121,3 +124,34 @@ def test_qpack_huffman_rejected():
     # Literal with literal name, H bit set on the name string (0x20 | 0x08).
     with pytest.raises(H3Err):
         qpack.decode_field_section(b"\x00\x00\x28")
+
+
+def test_h3_fields_from_request():
+    req = Req(
+        b"GET",
+        b"/",
+        b"1.1",
+        [(b"Host", b"a"), (b"x-foo", b"bar")],
+        b"",
+    )
+    assert _h3_fields(req) == [
+        (b":method", b"GET"),
+        (b":scheme", b"https"),
+        (b":authority", b"a"),
+        (b":path", b"/"),
+        (b"x-foo", b"bar"),
+    ]
+
+
+def test_h3_transport_lazy_import_guard():
+    try:
+        import aioquic  # noqa: F401
+
+        has_aioquic = True
+    except ImportError:
+        has_aioquic = False
+    if has_aioquic:
+        quichelp._require_aioquic()
+    else:
+        with pytest.raises(quichelp.H3TransportError):
+            quichelp._require_aioquic()

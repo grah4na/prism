@@ -606,3 +606,9 @@ services:
     - ./tools:/tools
     x-props:
       role: transducer
+  h3echo:
+    build:
+      context: ./images/origins/h3echo
+    x-props:
+      role: h3-origin
+      port: 443
