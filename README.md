@@ -4,7 +4,7 @@ Differential HTTP testing. Send the same raw bytes to many HTTP servers and see 
 
 Prism is useful for finding parser differentials, request-smuggling primitives, transducer normalizations, and H1/H2/H3 edge cases , by comparing real servers side-by-side instead of reasoning about specs.
 
-The interactive shell in `prism/` is a clean reimplementation with output compatible with [HTTP Prism](https://github.com/http-prism/http-prism) (GPL-3.0). `tools/` holds the original reference implementation used by the parity tests.
+The interactive shell in `prism/` is a clean reimplementation with output compatible with [HTTP Prism](https://github.com/http-prism/http-prism). `tools/` holds the original reference implementation used by the parity tests.
 
 ## Features
 
@@ -197,6 +197,20 @@ nginx: [
 Request direction (`fanout | grid/cluster`) answers: *did backends parse the same request?*
 Response direction (`rfanout | rgrid/rcluster`) answers: *did clients get the same status/headers/body?*
 Framing headers (`Content-Length`, `Transfer-Encoding`), dates, `Server`, `ETag`, etc. are ignored where they carry no protocol signal — see `prism/models.py`.
+
+## Security vulnerabilities you can find
+
+Every `X` in a grid is a parser disagreement, and parser disagreements are where HTTP-layer vulnerabilities live. Typical classes:
+
+- **HTTP request smuggling** (`CL.CL`, `CL.TE`, `TE.CL`, `TE.TE`) — duplicate or conflicting framing headers, chunked edge cases (bad chunk sizes, extensions, bare `LF`, missing terminator). Probe with `payload ... | transduce <proxy> | fanout | grid`.
+- **Request queue poisoning / desync** — one server sees one request where another sees two (or rejects what the other accepts — white-on-red `X`). Look for body-length and keep-alive disagreements.
+- **Cache poisoning** — header or URI normalization differences (case, duplicates, whitespace, absolute URI) that make a cache and an origin disagree on the cache key vs the forwarded request.
+- **ACL / access-control bypass** — URI interpretation differences (absolute URI, dot segments, prefix handling, method handling) between a transducer and an origin.
+- **Transducer normalization bugs** — proxies that join, drop, rename, or reorder headers differently (`transduce` shows each hop; compare with `utf`).
+- **Response-handling differences** — status/header/body disagreements via `rfanout | rgrid` (e.g. one server rejects with `400` while another processes the request).
+- **H2 / H3 framing edge cases** — preface, settings, flags, and frame-type handling via `h2frames | h2fanout` and `h3fanout`.
+
+Prism finds *candidates*, not exploits: confirm a discrepancy is reachable end-to-end (transducer → origin) and security-relevant before treating it as a vulnerability. See the [http-garden TROPHIES](https://github.com/narfindustries/http-garden/blob/main/TROPHIES.md) for examples of what this workflow has historically uncovered.
 
 ## HTTP/2
 

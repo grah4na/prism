@@ -77,6 +77,46 @@ Bare `payload` prints the current bytes. See `prism/shell.py` for dispatch.
 - `tools/` — original reference implementation (parity tests).
 - `tests/` — `test_parity.py`, `test_response.py`, `test_h3.py`.
 
+## Server inventory
+
+54 containerized servers from `config/compose.yml`: 39 origins, 14 transducers, 1 H3 origin.
+
+### Origins (39)
+
+| # | Service | # | Service | # | Service |
+| - | ------- | - | ------- | - | ------- |
+| 1 | `aiohttp` | 14 | `hyper` | 27 | `openwrt_uhttpd` |
+| 2 | `apache_httpd` | 15 | `hypercorn` | 28 | `protocol_http1` |
+| 3 | `apache_tomcat` | 16 | `ktor` | 29 | `puma` |
+| 4 | `aws_c_http` | 17 | `libevent` | 30 | `reactphp` |
+| 5 | `busybox` | 18 | `libmicrohttpd` | 31 | `thin` |
+| 6 | `cpp_httplib` | 19 | `libsoup` | 32 | `tornado` |
+| 7 | `eclipse_grizzly` | 20 | `lighttpd` | 33 | `twisted` |
+| 8 | `eclipse_jetty` | 21 | `mongoose` | 34 | `undertow` |
+| 9 | `fasthttp` | 22 | `netty` | 35 | `uvicorn` |
+| 10 | `go_stdlib` | 23 | `nginx` | 36 | `uwsgi` |
+| 11 | `gunicorn` | 24 | `node_stdlib` | 37 | `waitress` |
+| 12 | `h2o` | 25 | `openbsd_httpd` | 38 | `webrick` |
+| 13 | `haproxy_fcgi` | 26 | `openlitespeed` | 39 | `yahns` |
+
+### Transducers (14)
+
+| # | Service | # | Service |
+| - | ------- | - | ------- |
+| 1 | `apache_httpd_proxy` | 8 | `nghttpx` |
+| 2 | `apache_traffic_server` | 9 | `nginx_proxy` |
+| 3 | `envoy` | 10 | `openlitespeed_proxy` |
+| 4 | `go_stdlib_proxy` | 11 | `pound` |
+| 5 | `h2o_proxy` | 12 | `squid` |
+| 6 | `haproxy` | 13 | `vinyl` |
+| 7 | `lighttpd_proxy` | 14 | `yahns_proxy` |
+
+### H3 origins (1)
+
+| # | Service |
+| - | ------- |
+| 1 | `h3echo` |
+
 ## Project layout
 
 ```
