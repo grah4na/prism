@@ -26,6 +26,23 @@ The interactive shell in `prism/` is a clean reimplementation with output compat
 - 54 containerized servers: 39 origins, 14 transducers, 1 H3 origin (see `config/compose.yml`)
 - Parity-tested against the reference implementation (`tests/test_parity.py`)
 
+## Supported servers by language
+
+| Language | Count | Servers |
+| -------- | ----- | ------- |
+| C | 21 | `apache_httpd`, `aws_c_http`, `busybox`, `h2o`, `haproxy_fcgi`, `libevent`, `libmicrohttpd`, `libsoup`, `lighttpd`, `mongoose`, `nginx`, `openbsd_httpd`, `openwrt_uhttpd`, `uwsgi`, `apache_httpd_proxy`, `h2o_proxy`, `haproxy`, `lighttpd_proxy`, `nginx_proxy`, `pound`, `vinyl` |
+| Python | 8 | `aiohttp`, `gunicorn`, `hypercorn`, `tornado`, `twisted`, `uvicorn`, `waitress`, `h3echo` |
+| C++ | 7 | `cpp_httplib`, `openlitespeed`, `apache_traffic_server`, `envoy`, `nghttpx`, `openlitespeed_proxy`, `squid` |
+| Ruby | 6 | `protocol_http1`, `puma`, `thin`, `webrick`, `yahns`, `yahns_proxy` |
+| Java | 5 | `apache_tomcat`, `eclipse_grizzly`, `eclipse_jetty`, `netty`, `undertow` |
+| Go | 3 | `fasthttp`, `go_stdlib`, `go_stdlib_proxy` |
+| Rust | 1 | `hyper` |
+| Kotlin | 1 | `ktor` |
+| PHP | 1 | `reactphp` |
+| JavaScript | 1 | `node_stdlib` |
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full per-server table with roles.
+
 ## Requirements
 
 - Python 3.13+
