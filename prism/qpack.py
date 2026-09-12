@@ -1,11 +1,3 @@
-"""QPACK static-table support (RFC 9204), written from scratch.
-
-This is a first cut: the static table, prefixed integers, and string literals
-(plain only) are implemented. Field sections that reference the dynamic table
-or use Huffman coding raise H3Err; that keeps the decoder simple and honest.
-The encoder never emits Huffman or dynamic-table references.
-"""
-
 from __future__ import annotations
 
 from .h3mini import H3Err

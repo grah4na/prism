@@ -1,5 +1,3 @@
-"""HTTP/3 frame + QPACK unit tests (no docker needed)."""
-
 import os
 import sys
 

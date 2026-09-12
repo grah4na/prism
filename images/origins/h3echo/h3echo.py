@@ -1,10 +1,3 @@
-"""Minimal HTTP/3 echo server backed by aioquic.
-
-This is the reference H3 origin for Prism. It returns the same JSON trace
-shape as the HTTP/1 echo servers, so a 200 body is a request trace and the
-response-direction comparison skips it.
-"""
-
 from __future__ import annotations
 
 import argparse

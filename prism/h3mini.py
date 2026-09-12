@@ -1,12 +1,3 @@
-"""Minimal HTTP/3 frame support.
-
-Mirrors h2mini: this is only the wire-level frame layer plus the QUIC
-variable-length integer. QUIC's transport handshake is deliberately not here
-(it lives behind quichelp); this module is pure and testable without docker.
-
-Frame types follow RFC 9114 s7.2 plus MAX_PUSH_ID from RFC 9220.
-"""
-
 from __future__ import annotations
 
 import dataclasses

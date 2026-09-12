@@ -1,10 +1,3 @@
-"""QUIC + HTTP/3 transport via aioquic (lazy import).
-
-aioquic is optional: it is imported inside the functions so H1/H2 users never
-need it installed. aioquic also handles QPACK (via pylsqpack), so this layer
-only has to drive the H3 connection and fold the result into H3Reply.
-"""
-
 from __future__ import annotations
 
 import asyncio
