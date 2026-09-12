@@ -523,7 +523,7 @@ def main(argv: list[str] | None = None) -> None:
                         want = cmd[1:] or list(h3hosts.keys())
                         if _ok_h3(want, h3hosts) and want:
                             try:
-                                req = read_request(b"".join(cur))
+                                req, _ = read_request(b"".join(cur))
                             except ValueError as e:
                                 print(f"Couldn't parse request bytes for h3fanout: {e}")
                             else:
