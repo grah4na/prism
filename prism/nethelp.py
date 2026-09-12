@@ -71,17 +71,6 @@ def run_parallel(fn: Callable[[U], T], items: Sequence[U]) -> list[T]:
         return list(pool.map(fn, items))
 
 
-def cut_list(items: list[T], sep: T) -> list[list[T]]:
-    parts: list[list[T]] = []
-    work = list(items)
-    while sep in work:
-        at = work.index(sep)
-        parts.append(work[:at])
-        work = work[at + 1 :]
-    parts.append(work)
-    return parts
-
-
 def swap_bytes(blob: bytes, table: dict[bytes, bytes]) -> bytes:
     out = blob
     for old, new in table.items():

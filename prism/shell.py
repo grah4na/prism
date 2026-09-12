@@ -247,19 +247,7 @@ def _ok_hosts(names: list[str], origins, proxies) -> bool:
 def _ok_proxy(names: list[str], proxies) -> bool:
     for n in names:
         if n not in proxies:
-            print(
-                f"Invalid server name: {n}"
-                if False
-                else f"Invalid transducer name: {n}"
-            )
-            return False
-    return True
-
-
-def _ok_origin(names: list[str], origins) -> bool:
-    for n in names:
-        if n not in origins:
-            print(f"Invalid origin name: {n}")
+            print(f"Invalid transducer name: {n}")
             return False
     return True
 
@@ -536,7 +524,6 @@ def main(argv: list[str] | None = None) -> None:
                         assert isinstance(cur, list)
                         want = cmd[1:] or list(h3hosts.keys())
                         if _ok_h3(want, h3hosts) and want:
-                            last_hosts = want
                             try:
                                 req, _ = read_request(b"".join(cur))
                             except ValueError as e:
@@ -544,20 +531,25 @@ def main(argv: list[str] | None = None) -> None:
                             else:
                                 fields = _h3_fields(req)
                                 hosts = [h3hosts[n] for n in want]
-                                rows = run_parallel(
-                                    lambda h: [
-                                        quichelp.h3_hit(
-                                            h.addr, h.port, fields, req.body
-                                        ).to_resp()
-                                    ],
-                                    hosts,
-                                )
-                                cur = rows  # type: ignore[assignment]
-                                for name, items in zip(want, rows):
-                                    print(f"{name}: [")
-                                    for it in items:
-                                        show_resp_full(it)
-                                    print("]")
+                                try:
+                                    rows = run_parallel(
+                                        lambda h: [
+                                            quichelp.h3_hit(
+                                                h.addr, h.port, fields, req.body
+                                            ).to_resp()
+                                        ],
+                                        hosts,
+                                    )
+                                except quichelp.H3TransportError as e:
+                                    print(f"H3 request failed: {e}")
+                                else:
+                                    last_hosts = want
+                                    cur = rows  # type: ignore[assignment]
+                                    for name, items in zip(want, rows):
+                                        print(f"{name}: [")
+                                        for it in items:
+                                            show_resp_full(it)
+                                        print("]")
                     else:
                         print(
                             "This command expects to have its input piped in from `payload`."

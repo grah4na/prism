@@ -12,66 +12,6 @@ from collections.abc import Sequence
 
 from .models import Req, Resp
 
-# Same method seed list the Prism fuzzes over (minus HEAD/OPTIONS/etc).
-KNOWN_METHODS: list[bytes] = [
-    b"ACL",
-    b"ANNOUNCE",
-    b"BASELINE-CONTROL",
-    b"BIND",
-    b"CHECKIN",
-    b"CHECKOUT",
-    b"COPY",
-    b"DELETE",
-    b"DESCRIBE",
-    b"FLUSH",
-    b"GET",
-    b"GET_PARAMETER",
-    b"LABEL",
-    b"LINK",
-    b"LOCK",
-    b"M-SEARCH",
-    b"MERGE",
-    b"MKACTIVITY",
-    b"MKCALENDAR",
-    b"MKCOL",
-    b"MKREDIRECTREF",
-    b"MKWORKSPACE",
-    b"MOVE",
-    b"NOTIFY",
-    b"ORDERPATCH",
-    b"PATCH",
-    b"PAUSE",
-    b"PLAY",
-    b"POST",
-    b"PROPFIND",
-    b"PROPPATCH",
-    b"PURGE",
-    b"PUT",
-    b"QUERY",
-    b"REBIND",
-    b"RECORD",
-    b"REDIRECT",
-    b"REFRESH",
-    b"REPORT",
-    b"SEARCH",
-    b"SETUP",
-    b"SET_PARAMETER",
-    b"SOURCE",
-    b"SUBSCRIBE",
-    b"TEARDOWN",
-    b"UNBIND",
-    b"UNCHECKOUT",
-    b"UNKNOWN",
-    b"UNLINK",
-    b"UNLOCK",
-    b"UNSET",
-    b"UNSUBSCRIBE",
-    b"UPDATE",
-    b"UPDATEREDIRECTREF",
-    b"VERSION-CONTROL",
-    b"*",
-]
-
 _RESP_LINE = re.compile(
     rb"\A(?P<ver>[^\s]+)[\v\f\r \t]+(?P<code>\d+)[\v\f\r \t]+(?P<reason>.*?)\r?\n"
 )
@@ -290,10 +230,7 @@ def trim_09(blob: bytes) -> bytes:
     at = blob.find(b"\r\n\r\n")
     if at == -1:
         return blob
-    # Prism quirk: if no CRLFCRLF, start at 0; else skip past it.
-    if at == -1:
-        return blob
-    return blob[at + 4 :] if at != -1 else blob
+    return blob[at + 4 :]
 
 
 def read_09_reply(blob: bytes) -> Resp:
