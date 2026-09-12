@@ -1,5 +1,3 @@
-"""Socket + threading helpers (own implementation, same behavior)."""
-
 from __future__ import annotations
 
 import multiprocessing.pool

@@ -1,9 +1,3 @@
-"""Core message shapes for Prism.
-
-These mirror what the Prism prints (HTTPRequest / HTTPResponse) so output
-stays identical, but internals/names are our own.
-"""
-
 from __future__ import annotations
 
 import dataclasses

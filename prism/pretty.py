@@ -1,5 +1,3 @@
-"""Terminal rendering - byte-identical to Prism output."""
-
 from __future__ import annotations
 
 import itertools

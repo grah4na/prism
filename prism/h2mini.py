@@ -1,10 +1,3 @@
-"""Minimal HTTP/2 generic-frame support.
-
-Only what the REPL + origin fallback need: build/parse 9-byte header
-frames. Full specialized-frame validation lives upstream; we keep the
-wire format identical so `h2frames` output matches.
-"""
-
 from __future__ import annotations
 
 import dataclasses

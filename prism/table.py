@@ -1,5 +1,3 @@
-"""Grid / cluster builders."""
-
 from __future__ import annotations
 
 from .hosts import Host

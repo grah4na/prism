@@ -1,5 +1,3 @@
-"""Interactive shell - same commands/output as Prism, fresh code."""
-
 from __future__ import annotations
 
 import shlex

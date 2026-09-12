@@ -1,5 +1,3 @@
-"""Service discovery + roundtrips (own code, compatible behavior)."""
-
 from __future__ import annotations
 
 import dataclasses

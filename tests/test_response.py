@@ -1,5 +1,3 @@
-"""Response-direction tests (no docker needed)."""
-
 import os
 import sys
 

@@ -1,5 +1,3 @@
-"""Permissive HTTP/1 parsing, written from scratch for compatible output."""
-
 from __future__ import annotations
 
 import base64

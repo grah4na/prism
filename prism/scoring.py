@@ -1,5 +1,3 @@
-"""Discrepancy scoring (own implementation, same decisions as Prism)."""
-
 from __future__ import annotations
 
 import enum

@@ -1,5 +1,3 @@
-"""Parity tests: our output must match Prism output (no docker needed)."""
-
 import io
 import os
 import sys
