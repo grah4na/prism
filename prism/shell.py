@@ -272,6 +272,14 @@ def _ok_h3(names: list[str], h3hosts) -> bool:
     return True
 
 
+def _ok_resp_hosts(names: list[str], origins, proxies, h3hosts) -> bool:
+    for n in names:
+        if n not in origins and n not in proxies and n not in h3hosts:
+            print(f"Invalid server name: {n}")
+            return False
+    return True
+
+
 def _h3_fields(req: Req) -> list[tuple[bytes, bytes]]:
     authority = b""
     for k, v in req.headers:
@@ -344,6 +352,9 @@ def main(argv: list[str] | None = None) -> None:
         print(f"Failed to load hosts: {e}", file=sys.stderr)
         origins, proxies, allhosts, h3hosts = {}, {}, {}, {}
 
+    resp_hosts = {**allhosts, **h3hosts}
+    last_hosts: list[str] = []
+
     while True:
         try:
             line = input(PROMPT)
@@ -401,6 +412,7 @@ def main(argv: list[str] | None = None) -> None:
                         assert isinstance(cur, list)
                         want = cmd[1:] or list(allhosts.keys())
                         if _ok_hosts(want, origins, proxies) and want:
+                            last_hosts = want
                             targets = [allhosts[n] for n in want]
                             rows = run_parallel(lambda h: h.response_hit(cur), targets)  # type: ignore[arg-type]
                             cur = rows  # type: ignore[assignment]
@@ -416,11 +428,11 @@ def main(argv: list[str] | None = None) -> None:
                 elif cmd and cmd[0] == "rgrid":
                     if _is_resp_views(cur):
                         rows = cast("list[list[Resp]]", cur)
-                        want = cmd[1:] or list(allhosts.keys())
-                        if _ok_hosts(want, origins, proxies) and want:
+                        want = cmd[1:] or last_hosts or list(allhosts.keys())
+                        if _ok_resp_hosts(want, origins, proxies, h3hosts) and want:
                             show_resp_matrix(
                                 build_response_matrix(
-                                    rows, [allhosts[n] for n in want]
+                                    rows, [resp_hosts[n] for n in want]
                                 ),
                                 want,
                             )
@@ -428,10 +440,12 @@ def main(argv: list[str] | None = None) -> None:
                 elif cmd and cmd[0] == "rcluster":
                     if _is_resp_views(cur):
                         rows = cast("list[list[Resp]]", cur)
-                        want = cmd[1:] or list(allhosts.keys())
-                        if _ok_hosts(want, origins, proxies) and want:
+                        want = cmd[1:] or last_hosts or list(allhosts.keys())
+                        if _ok_resp_hosts(want, origins, proxies, h3hosts) and want:
                             show_groups(
-                                build_response_groups(rows, [allhosts[n] for n in want])
+                                build_response_groups(
+                                    rows, [resp_hosts[n] for n in want]
+                                )
                             )
                         cur = None
                 elif cmd and cmd[0] == "transduce":
@@ -522,6 +536,7 @@ def main(argv: list[str] | None = None) -> None:
                         assert isinstance(cur, list)
                         want = cmd[1:] or list(h3hosts.keys())
                         if _ok_h3(want, h3hosts) and want:
+                            last_hosts = want
                             try:
                                 req, _ = read_request(b"".join(cur))
                             except ValueError as e:
