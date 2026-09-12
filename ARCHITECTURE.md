@@ -83,39 +83,46 @@ Bare `payload` prints the current bytes. See `prism/shell.py` for dispatch.
 
 ### Origins (39)
 
-| # | Service | # | Service | # | Service |
-| - | ------- | - | ------- | - | ------- |
-| 1 | `aiohttp` | 14 | `hyper` | 27 | `openwrt_uhttpd` |
-| 2 | `apache_httpd` | 15 | `hypercorn` | 28 | `protocol_http1` |
-| 3 | `apache_tomcat` | 16 | `ktor` | 29 | `puma` |
-| 4 | `aws_c_http` | 17 | `libevent` | 30 | `reactphp` |
-| 5 | `busybox` | 18 | `libmicrohttpd` | 31 | `thin` |
-| 6 | `cpp_httplib` | 19 | `libsoup` | 32 | `tornado` |
-| 7 | `eclipse_grizzly` | 20 | `lighttpd` | 33 | `twisted` |
-| 8 | `eclipse_jetty` | 21 | `mongoose` | 34 | `undertow` |
-| 9 | `fasthttp` | 22 | `netty` | 35 | `uvicorn` |
-| 10 | `go_stdlib` | 23 | `nginx` | 36 | `uwsgi` |
-| 11 | `gunicorn` | 24 | `node_stdlib` | 37 | `waitress` |
-| 12 | `h2o` | 25 | `openbsd_httpd` | 38 | `webrick` |
-| 13 | `haproxy_fcgi` | 26 | `openlitespeed` | 39 | `yahns` |
+| # | Service | Language | # | Service | Language |
+| - | ------- | -------- | - | ------- | -------- |
+| 1 | `aiohttp` | Python | 21 | `mongoose` | C |
+| 2 | `apache_httpd` | C | 22 | `netty` | Java |
+| 3 | `apache_tomcat` | Java | 23 | `nginx` | C |
+| 4 | `aws_c_http` | C | 24 | `node_stdlib` | JavaScript |
+| 5 | `busybox` | C | 25 | `openbsd_httpd` | C |
+| 6 | `cpp_httplib` | C++ | 26 | `openlitespeed` | C++ |
+| 7 | `eclipse_grizzly` | Java | 27 | `openwrt_uhttpd` | C |
+| 8 | `eclipse_jetty` | Java | 28 | `protocol_http1` | Ruby |
+| 9 | `fasthttp` | Go | 29 | `puma` | Ruby |
+| 10 | `go_stdlib` | Go | 30 | `reactphp` | PHP |
+| 11 | `gunicorn` | Python | 31 | `thin` | Ruby |
+| 12 | `h2o` | C | 32 | `tornado` | Python |
+| 13 | `haproxy_fcgi` | C | 33 | `twisted` | Python |
+| 14 | `hyper` | Rust | 34 | `undertow` | Java |
+| 15 | `hypercorn` | Python | 35 | `uvicorn` | Python |
+| 16 | `ktor` | Kotlin | 36 | `uwsgi` | C |
+| 17 | `libevent` | C | 37 | `waitress` | Python |
+| 18 | `libmicrohttpd` | C | 38 | `webrick` | Ruby |
+| 19 | `libsoup` | C | 39 | `yahns` | Ruby |
+| 20 | `lighttpd` | C | | | |
 
 ### Transducers (14)
 
-| # | Service | # | Service |
-| - | ------- | - | ------- |
-| 1 | `apache_httpd_proxy` | 8 | `nghttpx` |
-| 2 | `apache_traffic_server` | 9 | `nginx_proxy` |
-| 3 | `envoy` | 10 | `openlitespeed_proxy` |
-| 4 | `go_stdlib_proxy` | 11 | `pound` |
-| 5 | `h2o_proxy` | 12 | `squid` |
-| 6 | `haproxy` | 13 | `vinyl` |
-| 7 | `lighttpd_proxy` | 14 | `yahns_proxy` |
+| # | Service | Language | # | Service | Language |
+| - | ------- | -------- | - | ------- | -------- |
+| 1 | `apache_httpd_proxy` | C | 8 | `nghttpx` | C++ |
+| 2 | `apache_traffic_server` | C++ | 9 | `nginx_proxy` | C |
+| 3 | `envoy` | C++ | 10 | `openlitespeed_proxy` | C++ |
+| 4 | `go_stdlib_proxy` | Go | 11 | `pound` | C |
+| 5 | `h2o_proxy` | C | 12 | `squid` | C++ |
+| 6 | `haproxy` | C | 13 | `vinyl` | C |
+| 7 | `lighttpd_proxy` | C | 14 | `yahns_proxy` | Ruby |
 
 ### H3 origins (1)
 
-| # | Service |
-| - | ------- |
-| 1 | `h3echo` |
+| # | Service | Language |
+| - | ------- | -------- |
+| 1 | `h3echo` | Python |
 
 ## Project layout
 
