@@ -1,5 +1,14 @@
 # Prism
 
+<p>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/grah4na/prism?style=flat" alt="License"></a>
+  <img src="https://img.shields.io/badge/python-3.13%2B-blue?style=flat&logo=python&logoColor=white" alt="Python 3.13+">
+  <img src="https://img.shields.io/badge/docker-required-blue?style=flat&logo=docker&logoColor=white" alt="Docker">
+  <img src="https://img.shields.io/badge/uv-package_manager-purple?style=flat" alt="uv">
+  <img src="https://img.shields.io/badge/HTTP-1.1%20%C2%B7%20H2%20%C2%B7%20H3-orange?style=flat" alt="HTTP/1.1, H2, H3">
+  <img src="https://img.shields.io/badge/tests-pytest-green?style=flat&logo=pytest" alt="pytest">
+</p>
+
 Differential HTTP testing. Send the same raw bytes to many HTTP servers and see which ones parse, forward, accept, or reject them differently. Inspired by [http-garden](https://github.com/narfindustries/http-garden).
 
 Prism is useful for finding parser differentials, request-smuggling primitives, transducer normalizations, and H1/H2/H3 edge cases , by comparing real servers side-by-side instead of reasoning about specs.
